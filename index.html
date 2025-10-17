@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>識字遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            background-color: #fff9e6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+        
+        .game-title {
+            font-size: 1.6em;
+            color: #8b4513;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .back-button-top {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            padding: 8px 15px;
+            background-color: #f4a460;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .back-button-top:active {
+            background-color: #e9967a;
+            transform: translateY(2px);
+        }
+        
+        .lesson-title {
+            font-size: 1.5em;
+            color: #d2691e;
+            padding: 8px 15px;
+            border-bottom: 2px solid #f4a460;
+            text-align: center;
+        }
+        
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .display-area {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 180px;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .character-display {
+            font-size: 100px;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .word-display {
+            font-size: 60px;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        .feedback-message {
+            position: absolute;
+            right: -150px;
+            font-size: 1.2em;
+            color: #d2691e;
+            padding: 8px 15px;
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            z-index: 10;
+            white-space: nowrap;
+        }
+        
+        .feedback-visible {
+            opacity: 1;
+        }
+        
+        .buttons-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            width: 100%;
+            margin-top: 10px; /* 增加间距 */
+        }
+        
+        .main-buttons {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            font-size: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .correct-btn {
+            background-color: #90ee90;
+            color: #006400;
+        }
+        
+        .incorrect-btn {
+            background-color: #ffb6c1;
+            color: #8b0000;
+        }
+        
+        .prev-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 8px 15px;
+            background-color: #ffa500;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .prev-btn:active {
+            background-color: #e9967a;
+            transform: translateY(2px);
+        }
+        
+        .stats {
+            padding: 10px;
+            background-color: rgba(255,255,255,0.7);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            text-align: center;
+            margin-top: 10px; /* 与对错键间距1cm */
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #90ee90;
+            transition: width 0.5s;
+        }
+        
+        .mode-indicator {
+            color: #ff4500;
+            font-weight: bold;
+            margin: 5px 0;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .completion-message {
+            font-size: 1.3em;
+            color: #2e8b57;
+            padding: 15px;
+            background-color: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 100%;
+        }
+        
+        .test-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2em;
+            color: #d2691e;
+            padding: 10px 20px;
+            background-color: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            width: auto;
+            max-width: 80%;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+            z-index: 99;
+        }
+        
+        .test-message-fade {
+            opacity: 0;
+        }
+        
+        .difficult-words {
+            margin-top: 10px;
+            text-align: center;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .difficult-words h3 {
+            color: #8b4513;
+            border-bottom: 1px solid #d2691e;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .word-item {
+            background-color: #fff;
+            padding: 6px 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        
+        .word-item .cantonese-btn {
+            position: static;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+        }
+        
+        .lesson-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .lesson-btn {
+            padding: 10px 15px;
+            background-color: #f4a460;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-width: 70px;
+        }
+        
+        .lesson-btn:active {
+            background-color: #e9967a;
+            transform: translateY(2px);
+        }
+        
+        .review-btn {
+            padding: 12px 20px;
+            background-color: #8a2be2;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+        
+        .review-btn:active {
+            background-color: #7a1bd2;
+            transform: translateY(2px);
+        }
+        
+        .cantonese-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #4a86e8;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+        
+        .cantonese-btn:active {
+            background-color: #3a76d8;
+            transform: scale(0.95);
+        }
+        
+        .audio-loading {
+            font-size: 10px;
+            color: #666;
+            margin-top: 3px;
+            text-align: center;
+        }
+        
+        .review-title {
+            font-size: 1.5em;
+            color: #8a2be2;
+            padding: 8px 15px;
+            border-bottom: 2px solid #8a2be2;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="gameTitle" class="game-title hidden">四五快讀 - 識字遊戲 (繁體版)</div>
+        
+        <button id="backButtonTop" class="back-button-top hidden">返回課程選擇</button>
+        
+        <div id="lessonSelection" class="lesson-selector">
+            <!-- 課程選擇按鈕將由JavaScript動態生成 -->
+        </div>
+        
+        <button id="reviewButton" class="review-btn hidden">重點複習</button>
+        
+        <div id="gameArea" class="hidden">
+            <div id="lessonTitle" class="lesson-title"></div>
+            
+            <div class="content-area">
+                <div class="display-area">
+                    <div id="characterDisplay" class="character-display"></div>
+                    <div id="wordDisplay" class="word-display hidden"></div>
+                    <button id="cantoneseBtn" class="cantonese-btn">粵</button>
+                    <div id="feedbackMessage" class="feedback-message"></div>
+                </div>
+                
+                <div class="buttons-row">
+                    <div class="main-buttons">
+                        <button id="correctBtn" class="btn correct-btn">✓</button>
+                        <button id="incorrectBtn" class="btn incorrect-btn">✗</button>
+                    </div>
+                </div>
+                <button id="prevBtn" class="prev-btn">上一頁</button>
+            </div>
+            
+            <div id="completionMessage" class="completion-message hidden"></div>
+            <div id="testMessage" class="test-message hidden">現在讓我考一考你詞語吧!</div>
+            <div id="audioLoading" class="audio-loading hidden">加載音頻中...</div>
+            
+            <div class="stats">
+                <div id="progressText">進度: 0/0</div>
+                <div class="progress-bar">
+                    <div id="progress" class="progress" style="width: 0%"></div>
+                </div>
+                <div id="reviewMode" class="mode-indicator hidden">複習模式</div>
+                <div id="wordReviewMode" class="mode-indicator hidden">詞語複習模式</div>
+            </div>
+            
+            <div class="difficult-words hidden" id="difficultWords">
+                <h3>需要複習的生字 (按錯誤次數排序)</h3>
+                <div class="word-list" id="difficultWordList">
+                    <!-- 困難生字列表將由JavaScript動態生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="reviewArea" class="hidden">
+            <div class="review-title">重點複習</div>
+            
+            <div class="content-area">
+                <div class="display-area">
+                    <div id="reviewCharacterDisplay" class="character-display"></div>
+                    <div id="reviewWordDisplay" class="word-display hidden"></div>
+                    <button id="reviewCantoneseBtn" class="cantonese-btn">粵</button>
+                    <div id="reviewFeedbackMessage" class="feedback-message"></div>
+                </div>
+                
+                <div class="buttons-row">
+                    <div class="main-buttons">
+                        <button id="reviewCorrectBtn" class="btn correct-btn">✓</button>
+                        <button id="reviewIncorrectBtn" class="btn incorrect-btn">✗</button>
+                    </div>
+                </div>
+                <button id="reviewPrevBtn" class="prev-btn">上一頁</button>
+            </div>
+            
+            <div class="stats">
+                <div id="reviewProgressText">複習進度: 0/0</div>
+                <div class="progress-bar">
+                    <div id="reviewProgress" class="progress" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音效元素 -->
+    <audio id="hooraySound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // 課程資料 (包含粵語發音)
+        const lessons = {
+            // 1-10課
+            1: [
+                { char: "人", jyutping: "jan4" },
+                { char: "口", jyutping: "hau2" },
+                { char: "大", jyutping: "daai6" },
+                { char: "中", jyutping: "zung1" },
+                { char: "小", jyutping: "siu2" },
+                { char: "哭", jyutping: "huk1" },
+                { char: "笑", jyutping: "siu3" },
+                { char: "一", jyutping: "jat1" },
+                { char: "上", jyutping: "soeng5" },
+                { char: "下", jyutping: "haa6" },
+                { char: "爸", jyutping: "baa1" },
+                { char: "媽", jyutping: "maa1" },
+                { char: "天", jyutping: "tin1" },
+                { char: "太", jyutping: "taai3" },
+                { char: "月", jyutping: "jyut6" },
+                { char: "二", jyutping: "ji6" }
+            ],
+            2: [
+                { char: "地", jyutping: "dei6" },
+                { char: "陽", jyutping: "joeng4" },
+                { char: "亮", jyutping: "loeng6" },
+                { char: "星", jyutping: "sing1" },
+                { char: "雲", jyutping: "wan4" },
+                { char: "火", jyutping: "fo2" },
+                { char: "水", jyutping: "seoi2" },
+                { char: "三", jyutping: "saam1" }
+            ],
+            3: [
+                { char: "山", jyutping: "saan1" },
+                { char: "石", jyutping: "sek6" },
+                { char: "田", jyutping: "tin4" },
+                { char: "土", jyutping: "tou2" },
+                { char: "木", jyutping: "muk6" },
+                { char: "目", jyutping: "muk6" },
+                { char: "耳", jyutping: "ji5" },
+                { char: "手", jyutping: "sau2" }
+            ],
+            4: [
+                { char: "足", jyutping: "zuk1" },
+                { char: "走", jyutping: "zau2" },
+                { char: "跑", jyutping: "paau2" },
+                { char: "跳", jyutping: "tiu3" },
+                { char: "坐", jyutping: "co5" },
+                { char: "立", jyutping: "lap6" },
+                { char: "四", jyutping: "sei3" },
+                { char: "五", jyutping: "ng5" }
+            ],
+            5: [
+                { char: "六", jyutping: "luk6" },
+                { char: "七", jyutping: "cat1" },
+                { char: "八", jyutping: "baat3" },
+                { char: "九", jyutping: "gau2" },
+                { char: "十", jyutping: "sap6" },
+                { char: "百", jyutping: "baak3" },
+                { char: "千", jyutping: "cin1" },
+                { char: "萬", jyutping: "maan6" }
+            ],
+            6: [
+                { char: "日", jyutping: "jat6" },
+                { char: "月", jyutping: "jyut6" },
+                { char: "明", jyutping: "ming4" },
+                { char: "光", jyutping: "gwong1" },
+                { char: "早", jyutping: "zou2" },
+                { char: "晚", jyutping: "maan5" },
+                { char: "春", jyutping: "ceon1" },
+                { char: "秋", jyutping: "cau1" }
+            ],
+            7: [
+                { char: "夏", jyutping: "haa6" },
+                { char: "冬", jyutping: "dung1" },
+                { char: "年", jyutping: "nin4" },
+                { char: "歲", jyutping: "seoi3" },
+                { char: "昨", jyutping: "zok6" },
+                { char: "今", jyutping: "gam1" },
+                { char: "明", jyutping: "ming4" },
+                { char: "天", jyutping: "tin1" }
+            ],
+            8: [
+                { char: "東", jyutping: "dung1" },
+                { char: "西", jyutping: "sai1" },
+                { char: "南", jyutping: "naam4" },
+                { char: "北", jyutping: "bak1" },
+                { char: "左", jyutping: "zo2" },
+                { char: "右", jyutping: "jau6" },
+                { char: "前", jyutping: "cin4" },
+                { char: "後", jyutping: "hau6" }
+            ],
+            9: [
+                { char: "高", jyutping: "gou1" },
+                { char: "低", jyutping: "dai1" },
+                { char: "長", jyutping: "coeng4" },
+                { char: "短", jyutping: "dyun2" },
+                { char: "多", jyutping: "do1" },
+                { char: "少", jyutping: "siu2" },
+                { char: "遠", jyutping: "jyun5" },
+                { char: "近", jyutping: "gan6" }
+            ],
+            10: [
+                { char: "快", jyutping: "faai3" },
+                { char: "慢", jyutping: "maan6" },
+                { char: "重", jyutping: "cung5" },
+                { char: "輕", jyutping: "hing1" },
+                { char: "強", jyutping: "koeng4" },
+                { char: "弱", jyutping: "joek6" },
+                { char: "好", jyutping: "hou2" },
+                { char: "壞", jyutping: "waai6" }
+            ],
+            // 21-30課
+            21: [
+                { char: "蟲", jyutping: "cung4" },
+                { char: "把", jyutping: "baa2" },
+                { char: "騎", jyutping: "ke4" },
+                { char: "河", jyutping: "ho4" },
+                { char: "禮", jyutping: "lai5" },
+                { char: "裏", jyutping: "leoi5" },
+                { char: "後", jyutping: "hau6" },
+                { char: "謝", jyutping: "ze6" },
+                { char: "貌", jyutping: "maau6" },
+                { char: "班", jyutping: "baan1" },
+                { char: "幼", jyutping: "jau3" },
+                { char: "園", jyutping: "jyun4" },
+                { char: "鵝", jyutping: "ngo4" },
+                { char: "背", jyutping: "bui3" },
+                { char: "拿", jyutping: "naa4" },
+                { char: "邊", jyutping: "bin1" }
+            ],
+            22: [
+                { char: "問", jyutping: "man6" },
+                { char: "候", jyutping: "hau6" },
+                { char: "常", jyutping: "soeng4" },
+                { char: "非", jyutping: "fei1" },
+                { char: "知", jyutping: "zi1" },
+                { char: "道", jyutping: "dou6" },
+                { char: "認", jyutping: "jing6" },
+                { char: "識", jyutping: "sik1" }
+            ],
+            23: [
+                { char: "讀", jyutping: "duk6" },
+                { char: "書", jyutping: "syu1" },
+                { char: "寫", jyutping: "se2" },
+                { char: "字", jyutping: "zi6" },
+                { char: "畫", jyutping: "waak6" },
+                { char: "圖", jyutping: "tou4" },
+                { char: "看", jyutping: "hon3" },
+                { char: "見", jyutping: "gin3" }
+            ],
+            24: [
+                { char: "聽", jyutping: "ting1" },
+                { char: "說", jyutping: "syut3" },
+                { char: "話", jyutping: "waa6" },
+                { char: "語", jyutping: "jyu5" },
+                { char: "文", jyutping: "man4" },
+                { char: "句", jyutping: "geoi3" },
+                { char: "子", jyutping: "zi2" },
+                { char: "段", jyutping: "dyun6" }
+            ],
+            25: [
+                { char: "學", jyutping: "hok6" },
+                { char: "校", jyutping: "haau6" },
+                { char: "教", jyutping: "gaau3" },
+                { char: "室", jyutping: "sat1" },
+                { char: "課", jyutping: "fo3" },
+                { char: "本", jyutping: "bun2" },
+                { char: "筆", jyutping: "bat1" },
+                { char: "紙", jyutping: "zi2" }
+            ],
+            26: [
+                { char: "朋", jyutping: "pang4" },
+                { char: "友", jyutping: "jau5" },
+                { char: "同", jyutping: "tung4" },
+                { char: "學", jyutping: "hok6" },
+                { char: "老", jyutping: "lou5" },
+                { char: "師", jyutping: "si1" },
+                { char: "生", jyutping: "sang1" },
+                { char: "活", jyutping: "wut6" }
+            ],
+            27: [
+                { char: "家", jyutping: "gaa1" },
+                { char: "庭", jyutping: "ting4" },
+                { char: "父", jyutping: "fu6" },
+                { char: "母", jyutping: "mou5" },
+                { char: "兄", jyutping: "hing1" },
+                { char: "弟", jyutping: "dai6" },
+                { char: "姐", jyutping: "ze2" },
+                { char: "妹", jyutping: "mui6" }
+            ],
+            28: [
+                { char: "爺", jyutping: "je4" },
+                { char: "奶", jyutping: "naai5" },
+                { char: "孫", jyutping: "syun1" },
+                { char: "子", jyutping: "zi2" },
+                { char: "女", jyutping: "neoi5" },
+                { char: "孩", jyutping: "haai4" },
+                { char: "兒", jyutping: "ji4" },
+                { char: "童", jyutping: "tung4" }
+            ],
+            29: [
+                { char: "房", jyutping: "fong4" },
+                { char: "屋", jyutping: "uk1" },
+                { char: "門", jyutping: "mun4" },
+                { char: "窗", jyutping: "coeng1" },
+                { char: "床", jyutping: "cong4" },
+                { char: "桌", jyutping: "coek3" },
+                { char: "椅", jyutping: "ji2" },
+                { char: "燈", jyutping: "dang1" }
+            ],
+            30: [
+                { char: "衣", jyutping: "ji1" },
+                { char: "服", jyutping: "fuk6" },
+                { char: "褲", jyutping: "fu3" },
+                { char: "鞋", jyutping: "haai4" },
+                { char: "帽", jyutping: "mou6" },
+                { char: "襪", jyutping: "mat6" },
+                { char: "穿", jyutping: "cyun1" },
+                { char: "戴", jyutping: "daai3" }
+            ]
+        };
+
+        // 詞語資料
+        const words = {
+            // 1-10課詞語
+            1: [
+                "大人", "小人", "大哭", "大笑", "大口", "小口"
+            ],
+            2: [
+                "爸爸", "媽媽", "上天", "天上", "太太", "太小", "一天", "一月", "三天", "二月", "上上", "下下"
+            ],
+            3: [
+                "大山", "小山", "石頭", "田地", "土地", "木頭", "目光", "耳朵", "手心"
+            ],
+            4: [
+                "手足", "走路", "跑步", "跳高", "坐下", "立正", "四天", "五月"
+            ],
+            5: [
+                "六天", "七天", "八天", "九天", "十天", "一百", "一千", "一萬"
+            ],
+            6: [
+                "日月", "明天", "光明", "早上", "晚上", "春天", "秋天"
+            ],
+            7: [
+                "夏天", "冬天", "今年", "明年", "昨天", "今天", "明天"
+            ],
+            8: [
+                "東西", "南北", "左右", "前後", "東方", "西方", "南方", "北方"
+            ],
+            9: [
+                "高低", "長短", "多少", "遠近", "高大", "低小", "長大", "短小"
+            ],
+            10: [
+                "快慢", "輕重", "強弱", "好壞", "快樂", "慢慢", "重要", "輕輕"
+            ],
+            // 21-30課詞語
+            21: [
+                "蟲子", "一把", "把手", "把門", "把戲",
+                "騎着", "天鵝", "白鵝", "小河", "大河",
+                "河水", "黃河", "河馬", "禮花", "背心",
+                "背上", "手背", "背着", "拿着", "拿來", "拿去"
+            ],
+            22: [
+                "問候", "常常", "非常", "知道", "認識", "問題", "候車", "常識"
+            ],
+            23: [
+                "讀書", "寫字", "畫圖", "看見", "讀者", "書本", "寫作", "字畫"
+            ],
+            24: [
+                "聽話", "說話", "語言", "文字", "句子", "段落", "聽說", "話語"
+            ],
+            25: [
+                "學校", "教室", "課本", "筆紙", "學生", "教學", "課室", "書本"
+            ],
+            26: [
+                "朋友", "同學", "老師", "生活", "友好", "同班", "老友", "師生"
+            ],
+            27: [
+                "家庭", "父母", "兄弟", "姐妹", "家人", "父子", "母女", "兄妹"
+            ],
+            28: [
+                "爺爺", "奶奶", "孫子", "女兒", "孩子", "兒童", "孫女", "兒女"
+            ],
+            29: [
+                "房間", "房屋", "門窗", "床桌", "椅子", "燈光", "房門", "窗戶"
+            ],
+            30: [
+                "衣服", "褲子", "鞋子", "帽子", "襪子", "穿衣", "戴帽", "服裝"
+            ]
+        };
+
+        // 鼓勵和加油訊息
+        const correctMessages = [
+            "柏睿~你真棒! ^3^",
+            "太厲害了!",
+            "好聰明呀!"
+        ];
+        
+        const incorrectMessages = [
+            "柏睿~加油啊! >_<",
+            "要再努力啊!",
+            "一會兒再考考你啊~"
+        ];
+
+        // 遊戲狀態 - 使用localStorage持久化存儲
+        let gameState = JSON.parse(localStorage.getItem('chineseCharacterGameState')) || {
+            currentLesson: null,
+            characterStats: {},
+            wordStats: {},
+            totalCorrectCount: 0,
+            totalIncorrectCount: 0
+        };
+
+        // 當前會話狀態
+        let currentCharacters = [];
+        let remainingCharacters = [];
+        let reviewCharacters = [];
+        let currentWords = [];
+        let remainingWords = [];
+        let reviewWords = [];
+        let isReviewMode = false;
+        let isWordTestMode = false;
+        let isWordReviewMode = false;
+        let currentCharObj = null;
+        let currentWord = null;
+        let audio = null;
+        let history = [];
+        let lastAnswerStats = null;
+        let hooraySound = null;
+
+        // 重點複習狀態
+        let reviewItems = [];
+        let currentReviewIndex = 0;
+        let reviewHistory = [];
+
+        // 保存遊戲狀態到localStorage
+        function saveGameState() {
+            gameState.characterStats = gameState.characterStats || {};
+            gameState.wordStats = gameState.wordStats || {};
+            localStorage.setItem('chineseCharacterGameState', JSON.stringify(gameState));
+        }
+
+        // 初始化課程選擇按鈕
+        function initLessonSelection() {
+            const lessonSelection = document.getElementById('lessonSelection');
+            lessonSelection.innerHTML = '';
+            
+            // 显示游戏标题
+            document.getElementById('gameTitle').classList.remove('hidden');
+            document.getElementById('reviewButton').classList.remove('hidden');
+            
+            // 创建第1至10课按钮
+            for (let i = 1; i <= 10; i++) {
+                const button = document.createElement('button');
+                button.className = 'lesson-btn';
+                button.textContent = `第${i}課`;
+                button.onclick = () => startLesson(i);
+                lessonSelection.appendChild(button);
+            }
+            
+            // 创建第21至30课按钮
+            for (let i = 21; i <= 30; i++) {
+                const button = document.createElement('button');
+                button.className = 'lesson-btn';
+                button.textContent = `第${i}課`;
+                button.onclick = () => startLesson(i);
+                lessonSelection.appendChild(button);
+            }
+        }
+        
+        // 開始課程
+        function startLesson(lessonNum) {
+            gameState.currentLesson = lessonNum;
+            currentCharacters = [...lessons[lessonNum]];
+            remainingCharacters = [...lessons[lessonNum]];
+            reviewCharacters = [];
+            currentWords = [...words[lessonNum]];
+            remainingWords = [...words[lessonNum]];
+            reviewWords = [];
+            isReviewMode = false;
+            isWordTestMode = false;
+            isWordReviewMode = false;
+            history = [];
+            lastAnswerStats = null;
+            
+            // 初始化統計資料
+            lessons[lessonNum].forEach(charObj => {
+                if (!gameState.characterStats[charObj.char]) {
+                    gameState.characterStats[charObj.char] = { wrongCount: 0, totalSeen: 0 };
+                }
+            });
+            
+            words[lessonNum].forEach(word => {
+                if (!gameState.wordStats[word]) {
+                    gameState.wordStats[word] = { wrongCount: 0, totalSeen: 0 };
+                }
+            });
+            
+            // 初始化音效
+            hooraySound = document.getElementById('hooraySound');
+            
+            // 更新UI
+            document.getElementById('lessonSelection').classList.add('hidden');
+            document.getElementById('reviewButton').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            document.getElementById('gameTitle').classList.add('hidden');
+            document.getElementById('backButtonTop').classList.remove('hidden');
+            
+            // 在测试阶段，顶部只显示对应的课
+            if (isWordTestMode || isWordReviewMode) {
+                document.getElementById('lessonTitle').textContent = `第${lessonNum}課`;
+            } else {
+                document.getElementById('lessonTitle').textContent = `第${lessonNum}課生字`;
+            }
+            
+            document.getElementById('reviewMode').classList.add('hidden');
+            document.getElementById('wordReviewMode').classList.add('hidden');
+            document.getElementById('difficultWords').classList.add('hidden');
+            document.getElementById('completionMessage').classList.add('hidden');
+            document.getElementById('testMessage').classList.add('hidden');
+            document.getElementById('characterDisplay').classList.remove('hidden');
+            document.getElementById('wordDisplay').classList.add('hidden');
+            
+            // 顯示第一個字
+            showNextCharacter();
+            updateProgress();
+            saveGameState();
+        }
+        
+        // 開始重點複習
+        function startReview() {
+            // 收集所有錯誤的單字和詞語
+            const difficultCharacters = Object.entries(gameState.characterStats)
+                .filter(([char, stats]) => stats.wrongCount > 0)
+                .sort((a, b) => b[1].wrongCount - a[1].wrongCount)
+                .slice(0, 15); // 前15個錯誤最多的單字
+                
+            const difficultWords = Object.entries(gameState.wordStats)
+                .filter(([word, stats]) => stats.wrongCount > 0)
+                .sort((a, b) => b[1].wrongCount - a[1].wrongCount)
+                .slice(0, 15); // 前15個錯誤最多的詞語
+            
+            reviewItems = [
+                ...difficultCharacters.map(([char, stats]) => ({
+                    type: 'character',
+                    content: char,
+                    wrongCount: stats.wrongCount
+                })),
+                ...difficultWords.map(([word, stats]) => ({
+                    type: 'word',
+                    content: word,
+                    wrongCount: stats.wrongCount
+                }))
+            ].sort((a, b) => b.wrongCount - a.wrongCount)
+             .slice(0, 30); // 取前30個錯誤最多的項目
+            
+            currentReviewIndex = 0;
+            reviewHistory = [];
+            
+            // 更新UI
+            document.getElementById('lessonSelection').classList.add('hidden');
+            document.getElementById('reviewButton').classList.add('hidden');
+            document.getElementById('reviewArea').classList.remove('hidden');
+            document.getElementById('gameTitle').classList.add('hidden');
+            document.getElementById('backButtonTop').classList.remove('hidden');
+            
+            if (reviewItems.length === 0) {
+                document.getElementById('reviewProgressText').textContent = "沒有需要複習的內容";
+                return;
+            }
+            
+            showNextReviewItem();
+            updateReviewProgress();
+        }
+        
+        // 顯示下一個複習項目
+        function showNextReviewItem() {
+            if (currentReviewIndex >= reviewItems.length) {
+                // 複習完成
+                document.getElementById('reviewProgressText').textContent = "複習完成！";
+                return;
+            }
+            
+            const item = reviewItems[currentReviewIndex];
+            const characterDisplay = document.getElementById('reviewCharacterDisplay');
+            const wordDisplay = document.getElementById('reviewWordDisplay');
+            
+            // 添加到複習歷史
+            reviewHistory.push({
+                index: currentReviewIndex,
+                type: item.type,
+                content: item.content
+            });
+            
+            if (item.type === 'character') {
+                characterDisplay.textContent = item.content;
+                characterDisplay.classList.remove('hidden');
+                wordDisplay.classList.add('hidden');
+            } else {
+                wordDisplay.textContent = item.content;
+                wordDisplay.classList.remove('hidden');
+                characterDisplay.classList.add('hidden');
+            }
+            
+            currentReviewIndex++;
+            updateReviewProgress();
+        }
+        
+        // 更新複習進度
+        function updateReviewProgress() {
+            document.getElementById('reviewProgressText').textContent = 
+                `複習進度: ${currentReviewIndex}/${reviewItems.length}`;
+            
+            const progressPercent = (currentReviewIndex / reviewItems.length) * 100;
+            document.getElementById('reviewProgress').style.width = `${progressPercent}%`;
+        }
+        
+        // 顯示下一個字
+        function showNextCharacter() {
+            const characterDisplay = document.getElementById('characterDisplay');
+            const wordDisplay = document.getElementById('wordDisplay');
+            const completionMessage = document.getElementById('completionMessage');
+            const testMessage = document.getElementById('testMessage');
+            
+            // 如果正在進行詞語測試，先處理詞語
+            if (isWordTestMode || isWordReviewMode) {
+                showNextWord();
+                return;
+            }
+            
+            if (isReviewMode && reviewCharacters.length === 0) {
+                // 複習模式結束，檢查是否還有需要複習的字
+                if (remainingCharacters.length === 0) {
+                    // 所有字都學會了，開始詞語測試
+                    characterDisplay.classList.add('hidden');
+                    testMessage.textContent = "現在讓我考一考你詞語吧!";
+                    testMessage.classList.remove('hidden');
+                    isWordTestMode = true;
+                    
+                    // 更新标题为课程名称
+                    document.getElementById('lessonTitle').textContent = `第${gameState.currentLesson}課`;
+                    
+                    // 2秒後淡出提示訊息
+                    setTimeout(() => {
+                        testMessage.classList.add('test-message-fade');
+                    }, 2000);
+                    
+                    showNextWord();
+                    return;
+                } else {
+                    // 還有需要學習的字，切換回正常模式
+                    isReviewMode = false;
+                    document.getElementById('reviewMode').classList.add('hidden');
+                }
+            }
+            
+            // 選擇要顯示的字
+            let currentChar;
+            if (isReviewMode) {
+                // 複習模式：從錯誤字中隨機選擇
+                const randomIndex = Math.floor(Math.random() * reviewCharacters.length);
+                currentCharObj = reviewCharacters[randomIndex];
+            } else {
+                // 正常模式：從剩餘字中隨機選擇
+                if (remainingCharacters.length === 0) {
+                    // 所有字都學過一遍，檢查是否有需要複習的字
+                    if (reviewCharacters.length > 0) {
+                        // 進入複習模式
+                        isReviewMode = true;
+                        document.getElementById('reviewMode').classList.remove('hidden');
+                        showNextCharacter();
+                        return;
+                    } else {
+                        // 所有字都學會了，開始詞語測試
+                        characterDisplay.classList.add('hidden');
+                        testMessage.textContent = "現在讓我考一考你詞語吧!";
+                        testMessage.classList.remove('hidden');
+                        isWordTestMode = true;
+                        
+                        // 更新标题为课程名称
+                        document.getElementById('lessonTitle').textContent = `第${gameState.currentLesson}課`;
+                        
+                        // 2秒後淡出提示訊息
+                        setTimeout(() => {
+                            testMessage.classList.add('test-message-fade');
+                        }, 2000);
+                        
+                        showNextWord();
+                        return;
+                    }
+                }
+                
+                const randomIndex = Math.floor(Math.random() * remainingCharacters.length);
+                currentCharObj = remainingCharacters[randomIndex];
+            }
+            
+            // 添加到历史记录
+            history.push({
+                type: 'character',
+                content: currentCharObj.char,
+                isReviewMode: isReviewMode,
+                isWordTestMode: isWordTestMode,
+                isWordReviewMode: isWordReviewMode,
+                characterStats: JSON.parse(JSON.stringify(gameState.characterStats)),
+                wordStats: JSON.parse(JSON.stringify(gameState.wordStats)),
+                totalCorrectCount: gameState.totalCorrectCount,
+                totalIncorrectCount: gameState.totalIncorrectCount,
+                remainingCharacters: [...remainingCharacters],
+                reviewCharacters: [...reviewCharacters],
+                remainingWords: [...remainingWords],
+                reviewWords: [...reviewWords]
+            });
+            
+            characterDisplay.textContent = currentCharObj.char;
+            gameState.characterStats[currentCharObj.char].totalSeen++;
+            saveGameState();
+        }
+        
+        // 顯示下一個詞語
+        function showNextWord() {
+            const characterDisplay = document.getElementById('characterDisplay');
+            const wordDisplay = document.getElementById('wordDisplay');
+            const completionMessage = document.getElementById('completionMessage');
+            const testMessage = document.getElementById('testMessage');
+            
+            if (isWordReviewMode && reviewWords.length === 0) {
+                // 詞語複習模式結束，檢查是否還有需要複習的詞語
+                if (remainingWords.length === 0) {
+                    // 所有詞語都學會了
+                    wordDisplay.classList.add('hidden');
+                    testMessage.classList.add('hidden');
+                    completionMessage.textContent = "恭喜！本課所有生字和詞語都學會了！";
+                    completionMessage.classList.remove('hidden');
+                    showDifficultWords();
+                    saveGameState();
+                    return;
+                } else {
+                    // 還有需要學習的詞語，切換回正常詞語測試模式
+                    isWordReviewMode = false;
+                    document.getElementById('wordReviewMode').classList.add('hidden');
+                }
+            }
+            
+            // 選擇要顯示的詞語
+            if (isWordReviewMode) {
+                // 詞語複習模式：從錯誤詞語中隨機選擇
+                const randomIndex = Math.floor(Math.random() * reviewWords.length);
+                currentWord = reviewWords[randomIndex];
+            } else {
+                // 正常詞語測試模式：從剩餘詞語中隨機選擇
+                if (remainingWords.length === 0) {
+                    // 所有詞語都學過一遍，檢查是否有需要複習的詞語
+                    if (reviewWords.length > 0) {
+                        // 進入詞語複習模式
+                        isWordReviewMode = true;
+                        document.getElementById('wordReviewMode').classList.remove('hidden');
+                        showNextWord();
+                        return;
+                    } else {
+                        // 所有詞語都學會了
+                        wordDisplay.classList.add('hidden');
+                        testMessage.classList.add('hidden');
+                        completionMessage.textContent = "恭喜！本課所有生字和詞語都學會了！";
+                        completionMessage.classList.remove('hidden');
+                        showDifficultWords();
+                        saveGameState();
+                        return;
+                    }
+                }
+                
+                const randomIndex = Math.floor(Math.random() * remainingWords.length);
+                currentWord = remainingWords[randomIndex];
+            }
+            
+            // 添加到历史记录
+            history.push({
+                type: 'word',
+                content: currentWord,
+                isReviewMode: isReviewMode,
+                isWordTestMode: isWordTestMode,
+                isWordReviewMode: isWordReviewMode,
+                characterStats: JSON.parse(JSON.stringify(gameState.characterStats)),
+                wordStats: JSON.parse(JSON.stringify(gameState.wordStats)),
+                totalCorrectCount: gameState.totalCorrectCount,
+                totalIncorrectCount: gameState.totalIncorrectCount,
+                remainingCharacters: [...remainingCharacters],
+                reviewCharacters: [...reviewCharacters],
+                remainingWords: [...remainingWords],
+                reviewWords: [...reviewWords]
+            });
+            
+            characterDisplay.classList.add('hidden');
+            wordDisplay.textContent = currentWord;
+            wordDisplay.classList.remove('hidden');
+            gameState.wordStats[currentWord].totalSeen++;
+            saveGameState();
+        }
+        
+        // 返回上一頁
+        function goToPrevious() {
+            if (history.length <= 1) return; // 没有上一页可返回
+            
+            // 移除当前页
+            const currentState = history.pop();
+            
+            // 获取上一页
+            const previous = history[history.length - 1];
+            
+            const characterDisplay = document.getElementById('characterDisplay');
+            const wordDisplay = document.getElementById('wordDisplay');
+            
+            // 恢复上一页的状态
+            isReviewMode = previous.isReviewMode;
+            isWordTestMode = previous.isWordTestMode;
+            isWordReviewMode = previous.isWordReviewMode;
+            
+            // 恢复统计数据和游戏状态
+            gameState.characterStats = previous.characterStats;
+            gameState.wordStats = previous.wordStats;
+            gameState.totalCorrectCount = previous.totalCorrectCount;
+            gameState.totalIncorrectCount = previous.totalIncorrectCount;
+            remainingCharacters = previous.remainingCharacters;
+            reviewCharacters = previous.reviewCharacters;
+            remainingWords = previous.remainingWords;
+            reviewWords = previous.reviewWords;
+            
+            // 更新UI状态
+            document.getElementById('reviewMode').classList.toggle('hidden', !isReviewMode);
+            document.getElementById('wordReviewMode').classList.toggle('hidden', !isWordReviewMode);
+            document.getElementById('completionMessage').classList.add('hidden');
+            document.getElementById('difficultWords').classList.add('hidden');
+            
+            if (previous.type === 'character') {
+                characterDisplay.textContent = previous.content;
+                characterDisplay.classList.remove('hidden');
+                wordDisplay.classList.add('hidden');
+                // 找到对应的字符对象
+                currentCharObj = lessons[gameState.currentLesson].find(item => item.char === previous.content);
+            } else {
+                wordDisplay.textContent = previous.content;
+                wordDisplay.classList.remove('hidden');
+                characterDisplay.classList.add('hidden');
+                currentWord = previous.content;
+            }
+            
+            updateProgress();
+            saveGameState();
+        }
+        
+        // 更新進度顯示
+        function updateProgress() {
+            let progressText = "";
+            
+            if (isWordTestMode || isWordReviewMode) {
+                // 词語测试阶段只显示词語进度
+                const totalWords = currentWords.length;
+                const learnedWords = totalWords - remainingWords.length;
+                const reviewWordsCount = reviewWords.length;
+                progressText = `詞語進度: ${learnedWords}/${totalWords} (需複習: ${reviewWordsCount})`;
+                
+                const progressPercent = ((learnedWords / totalWords) * 100);
+                document.getElementById('progress').style.width = `${progressPercent}%`;
+            } else {
+                // 生字学习阶段显示生字进度
+                const totalChars = currentCharacters.length;
+                const learnedChars = totalChars - remainingCharacters.length;
+                const reviewChars = reviewCharacters.length;
+                progressText = `生字進度: ${learnedChars}/${totalChars} (需複習: ${reviewChars})`;
+                
+                const progressPercent = ((learnedChars / totalChars) * 100);
+                document.getElementById('progress').style.width = `${progressPercent}%`;
+            }
+            
+            document.getElementById('progressText').textContent = progressText;
+        }
+        
+        // 顯示困難生字
+        function showDifficultWords() {
+            const difficultWordList = document.getElementById('difficultWordList');
+            difficultWordList.innerHTML = '';
+            
+            // 找出所有錯誤的生字，按錯誤次數排序
+            const difficultWords = Object.entries(gameState.characterStats)
+                .filter(([char, stats]) => stats.wrongCount > 0)
+                .sort((a, b) => b[1].wrongCount - a[1].wrongCount);
+            
+            if (difficultWords.length > 0) {
+                document.getElementById('difficultWords').classList.remove('hidden');
+                
+                difficultWords.forEach(([char, stats]) => {
+                    const wordItem = document.createElement('div');
+                    wordItem.className = 'word-item';
+                    
+                    const charSpan = document.createElement('span');
+                    charSpan.textContent = `${char} (錯誤: ${stats.wrongCount}次)`;
+                    charSpan.style.marginRight = '5px';
+                    
+                    const cantoneseBtn = document.createElement('button');
+                    cantoneseBtn.className = 'cantonese-btn';
+                    cantoneseBtn.textContent = '粵';
+                    cantoneseBtn.onclick = () => speakCantonese(char);
+                    
+                    wordItem.appendChild(charSpan);
+                    wordItem.appendChild(cantoneseBtn);
+                    
+                    difficultWordList.appendChild(wordItem);
+                });
+            }
+        }
+        
+        // 顯示鼓勵或加油訊息
+        function showFeedbackMessage(isCorrect) {
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            let message = "";
+            
+            if (isCorrect) {
+                gameState.totalCorrectCount++;
+                if (gameState.totalCorrectCount % 5 === 0) {
+                    // 每5次正确显示鼓励訊息（不要求连续）
+                    const randomIndex = Math.floor(Math.random() * correctMessages.length);
+                    message = correctMessages[randomIndex];
+                }
+                
+                // 播放欢呼音效 - 每次按对键都播放
+                if (hooraySound) {
+                    hooraySound.currentTime = 0;
+                    hooraySound.play().catch(e => console.log("音效播放失败:", e));
+                }
+            } else {
+                gameState.totalIncorrectCount++;
+                if (gameState.totalIncorrectCount % 2 === 0) {
+                    // 每2次错误显示加油訊息（不要求连续）
+                    const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
+                    message = incorrectMessages[randomIndex];
+                }
+            }
+            
+            if (message) {
+                feedbackMessage.textContent = message;
+                feedbackMessage.classList.add('feedback-visible');
+                
+                // 2秒後淡出
+                setTimeout(() => {
+                    feedbackMessage.classList.remove('feedback-visible');
+                }, 2000);
+            }
+        }
+        
+        // 播放粵語發音
+        function speakCantonese(char) {
+            const loadingElement = document.getElementById('audioLoading');
+            loadingElement.classList.remove('hidden');
+            
+            // 使用Google TTS API
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=yue&client=tw-ob&q=${encodeURIComponent(char)}`;
+            
+            // 停止之前的音頻
+            if (audio) {
+                audio.pause();
+            }
+            
+            // 創建新的音頻對象
+            audio = new Audio(ttsUrl);
+            audio.addEventListener('canplaythrough', () => {
+                loadingElement.classList.add('hidden');
+                audio.play();
+            });
+            
+            audio.addEventListener('error', () => {
+                loadingElement.classList.add('hidden');
+                // 如果TTS失敗，使用瀏覽器語音合成作為備用
+                fallbackTTS(char);
+            });
+        }
+        
+        // 備用TTS方法
+        function fallbackTTS(char) {
+            const utterance = new SpeechSynthesisUtterance(char);
+            utterance.lang = 'zh-HK';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+        
+        // 處理答案選擇
+        function handleAnswer(isCorrect) {
+            // 顯示鼓勵或加油訊息
+            showFeedbackMessage(isCorrect);
+            
+            if (isWordTestMode || isWordReviewMode) {
+                // 處理詞語答案
+                handleWordAnswer(isCorrect);
+            } else {
+                // 處理生字答案
+                handleCharacterAnswer(isCorrect);
+            }
+            
+            updateProgress();
+            
+            if (isWordTestMode || isWordReviewMode) {
+                showNextWord();
+            } else {
+                showNextCharacter();
+            }
+            
+            saveGameState();
+        }
+        
+        // 處理生字答案
+        function handleCharacterAnswer(isCorrect) {
+            const currentChar = document.getElementById('characterDisplay').textContent;
+            
+            if (isCorrect) {
+                // 正確答案
+                if (isReviewMode) {
+                    // 從複習列表中移除
+                    const index = reviewCharacters.findIndex(item => item.char === currentChar);
+                    if (index > -1) {
+                        reviewCharacters.splice(index, 1);
+                    }
+                } else {
+                    // 從剩餘列表中移除
+                    const index = remainingCharacters.findIndex(item => item.char === currentChar);
+                    if (index > -1) {
+                        remainingCharacters.splice(index, 1);
+                    }
+                }
+            } else {
+                // 錯誤答案
+                gameState.characterStats[currentChar].wrongCount++;
+                
+                if (!isReviewMode && !reviewCharacters.some(item => item.char === currentChar)) {
+                    // 添加到複習列表
+                    const charObj = currentCharacters.find(item => item.char === currentChar);
+                    if (charObj) {
+                        reviewCharacters.push(charObj);
+                    }
+                }
+            }
+        }
+        
+        // 處理詞語答案
+        function handleWordAnswer(isCorrect) {
+            if (isCorrect) {
+                // 正確答案
+                if (isWordReviewMode) {
+                    // 從詞語複習列表中移除
+                    const index = reviewWords.indexOf(currentWord);
+                    if (index > -1) {
+                        reviewWords.splice(index, 1);
+                    }
+                } else {
+                    // 從剩餘詞語列表中移除
+                    const index = remainingWords.indexOf(currentWord);
+                    if (index > -1) {
+                        remainingWords.splice(index, 1);
+                    }
+                }
+            } else {
+                // 錯誤答案
+                gameState.wordStats[currentWord].wrongCount++;
+                
+                if (!isWordReviewMode && !reviewWords.includes(currentWord)) {
+                    // 添加到詞語複習列表
+                    reviewWords.push(currentWord);
+                }
+            }
+        }
+        
+        // 返回課程選擇
+        function backToLessonSelection() {
+            document.getElementById('gameArea').classList.add('hidden');
+            document.getElementById('reviewArea').classList.add('hidden');
+            document.getElementById('lessonSelection').classList.remove('hidden');
+            document.getElementById('gameTitle').classList.remove('hidden');
+            document.getElementById('reviewButton').classList.remove('hidden');
+            document.getElementById('backButtonTop').classList.add('hidden');
+            document.getElementById('difficultWords').classList.add('hidden');
+            document.getElementById('completionMessage').classList.add('hidden');
+            gameState.currentLesson = null;
+            saveGameState();
+        }
+        
+        // 初始化
+        window.onload = function() {
+            initLessonSelection();
+            
+            // 如果有正在进行的课程，恢复它
+            if (gameState.currentLesson) {
+                startLesson(gameState.currentLesson);
+            }
+            
+            // 添加事件監聽器
+            document.getElementById('correctBtn').addEventListener('click', () => handleAnswer(true));
+            document.getElementById('incorrectBtn').addEventListener('click', () => handleAnswer(false));
+            document.getElementById('prevBtn').addEventListener('click', goToPrevious);
+            document.getElementById('cantoneseBtn').addEventListener('click', () => {
+                if (currentCharObj && !isWordTestMode && !isWordReviewMode) {
+                    speakCantonese(currentCharObj.char);
+                }
+            });
+            document.getElementById('backButtonTop').addEventListener('click', backToLessonSelection);
+            document.getElementById('reviewButton').addEventListener('click', startReview);
+            
+            // 重點複習按鈕事件
+            document.getElementById('reviewCorrectBtn').addEventListener('click', () => {
+                showNextReviewItem();
+            });
+            document.getElementById('reviewIncorrectBtn').addEventListener('click', () => {
+                showNextReviewItem();
+            });
+            document.getElementById('reviewCantoneseBtn').addEventListener('click', () => {
+                const currentItem = reviewItems[currentReviewIndex - 1];
+                if (currentItem) {
+                    speakCantonese(currentItem.content);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
